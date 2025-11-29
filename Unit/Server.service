@@ -1,0 +1,10 @@
+[Unit]
+Description=Service service 
+After=network.target
+
+[Service]
+ExecStart=Server -p 5555 -P 5556
+Type=forking
+
+[Install]
+WantedBy=multi-user.target
