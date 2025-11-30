@@ -608,7 +608,7 @@
 				{
 					for
 					(
-						struct epoll_event*	restrict	currentEvent = events;
+						struct epoll_event*	currentEvent = events;
 						currentEvent < events + eventsSize;
 						++currentEvent
 					)
