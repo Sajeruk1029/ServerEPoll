@@ -33,7 +33,7 @@
 
 			message->size	=	strlen(message->content);
 
-			strncpy(message->content, text, MESSAGESIZE);
+			strncpy(message->content, text, MESSAGESIZE - 1);
 
 			return	0;
 		}
@@ -50,7 +50,7 @@
 
 			timeStruct	=	localtime(&time);
 
-			strftime(message->content, MESSAGESIZE, "%Y-%m-%d %H:%M:%S", timeStruct);
+			strftime(message->content, MESSAGESIZE - 1, "%Y-%m-%d %H:%M:%S", timeStruct);
 
 			message->size	=	strlen(message->content);
 
