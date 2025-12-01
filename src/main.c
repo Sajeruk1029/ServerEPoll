@@ -307,7 +307,7 @@
 				}
 			}
 
-			result	=	daemon(1, 1);
+			result	=	daemon(0, 0);
 			if(result < 0)
 			{
 				fprintf(stderr, "%s\n", strerror(errno));
