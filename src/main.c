@@ -310,7 +310,14 @@
 			result	=	daemon(0, 0);
 			if(result < 0)
 			{
-				fprintf(stderr, "%s\n", strerror(errno));
+				if(fileOut)
+				{
+					printErrnoError(fileOut);
+
+					fclose(fileOut);
+
+					fileOut	=	0x00;
+				}
 
 				return	EXIT_FAILURE;
 			}
@@ -318,10 +325,10 @@
 			events	=	(struct epoll_event*)calloc(maxConnections, sizeof(struct epoll_event));
 			if(!events)
 			{
-				fprintf(stderr, "%s\n", strerror(errno));
-
 				if(fileOut)
 				{
+					printErrnoError(fileOut);
+
 					fclose(fileOut);
 
 					fileOut	=	0x00;
