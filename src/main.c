@@ -308,55 +308,15 @@
 			}
 
 			result	=	daemon(0, 0);
-			if(result < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				return	EXIT_FAILURE;
-			}
+			if(result < 0){ goto	closeFileOut; }
 
 			events	=	(struct epoll_event*)calloc(maxConnections, sizeof(struct epoll_event));
-			if(!events)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				exit(EXIT_FAILURE);
-			}
+			if(!events){ goto	closeFileOut; }
 
 			event.events	=	EPOLLIN | EPOLLET;
 
 			handlerRecv	=	epoll_create(maxConnections);
-			if(handlerRecv < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				free(events);
-
-				events	=	0x00;
-
-				exit(EXIT_FAILURE);
-			}
+			if(handlerRecv < 0){ goto	freeEPollEvents; }
 
 			serverTCP.sin_family	=	AF_INET;
 			serverTCP.sin_port	=	htons(portTCP);
@@ -367,249 +327,44 @@
 			serverUDP.sin_addr.s_addr	=	0;
 
 			sockTCP	=	socket(PF_INET, SOCK_STREAM, IPPROTO_IP);
-			if(sockTCP < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-				close(handlerRecv);
-
-				free(events);
-
-				events	=	0x00;
-
-				exit(EXIT_FAILURE);
-			}
+			if(sockTCP < 0){ goto	closeEPollQueue; }
 			sockUDP	=	socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
-			if(sockUDP < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				close(sockTCP);
-
-				close(handlerRecv);
-
-				free(events);
-
-				events	=	0x00;
-
-				exit(EXIT_FAILURE);
-			}
+			if(sockUDP < 0){ goto	closeSockTCP; }
 
 			result	=	bind(sockTCP, (struct sockaddr*)&serverTCP, sizeof(struct sockaddr_in));
-			if(result < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				close(sockUDP);
-				close(sockTCP);
-
-				close(handlerRecv);
-
-				free(events);
-
-				events	=	0x00;
-
-				exit(EXIT_FAILURE);
-			}
+			if(result < 0){ goto	closeSockUDP; }
 			result	=	bind(sockUDP, (struct sockaddr*)&serverUDP, sizeof(struct sockaddr_in));
-			if(result < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				close(sockUDP);
-				close(sockTCP);
-
-				close(handlerRecv);
-
-				free(events);
-
-				events	=	0x00;
-
-				exit(EXIT_FAILURE);
-			}
+			if(result < 0){ goto	closeSockUDP; }
 
 			event.data.fd	=	sockUDP;
 			result	=	epoll_ctl(handlerRecv, EPOLL_CTL_ADD, sockUDP, &event);
-			if(result < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				close(sockUDP);
-				close(sockTCP);
-
-				close(handlerRecv);
-
-				free(events);
-
-				events	=	0x00;
-
-				exit(EXIT_FAILURE);
-			}
+			if(result < 0){ goto	closeSockUDP; }
 
 			result	=	fcntl(sockTCP, F_SETFL, O_NONBLOCK);
-			if(result < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				close(sockUDP);
-				close(sockTCP);
-
-				close(handlerRecv);
-
-				free(events);
-
-				events	=	0x00;
-
-				exit(EXIT_FAILURE);
-			}
+			if(result < 0){ goto	closeSockUDP; }
 
 			result	=	listen(sockTCP, maxConnections);
-			if(result < 0)
-			{
-				if(fileOut)
-				{
-					printErrnoError(fileOut);
-
-					fclose(fileOut);
-
-					fileOut	=	0x00;
-				}
-
-				close(sockUDP);
-				close(sockTCP);
-
-				close(handlerRecv);
-
-				free(events);
-
-				events	=	0x00;
-
-				exit(EXIT_FAILURE);
-			}
+			if(result < 0){ goto	closeSockUDP; }
 
 			while(1)
 			{
 				result	=	accept(sockTCP, 0x00, 0x00);
 				if(result < 0)
 				{
-					if(errno != EAGAIN)
-					{
-						if(fileOut)
-						{
-							printErrnoError(fileOut);
-
-							fclose(fileOut);
-
-							fileOut	=	0x00;
-						}
-
-						close(sockUDP);
-						close(sockTCP);
-
-						close(handlerRecv);
-
-						free(events);
-
-						events	=	0x00;
-
-						exit(EXIT_FAILURE);
-					}
+					if(errno != EAGAIN){ goto	closeSockUDP; }
 				}
 				else
 				{
 					event.data.fd	=	result;
 					result	=	epoll_ctl(handlerRecv, EPOLL_CTL_ADD, result, &event);
-					if(result < 0)
-					{
-						if(fileOut)
-						{
-							printErrnoError(fileOut);
-
-							fclose(fileOut);
-
-							fileOut	=	0x00;
-						}
-
-						close(sockUDP);
-						close(sockTCP);
-
-						close(handlerRecv);
-
-						free(events);
-
-						events	=	0x00;
-
-						exit(EXIT_FAILURE);
-					}
+					if(result < 0){ goto	closeSockUDP; }
 
 					++connections;
 					++currentConnections;
 				}
 
 				eventsSize	=	epoll_wait(handlerRecv, events, maxConnections, TIMEOUT);
-				if(eventsSize < 0)
-				{
-					if(fileOut)
-					{
-						printErrnoError(fileOut);
-
-						fclose(fileOut);
-
-						fileOut	=	0x00;
-					}
-
-					close(sockUDP);
-					close(sockTCP);
-
-					close(handlerRecv);
-
-					free(events);
-
-					events	=	0x00;
-
-					exit(EXIT_FAILURE);
-				}
+				if(eventsSize < 0){ goto	closeSockUDP; }
 				else if(!eventsSize){ continue; }
 				else
 				{
@@ -632,25 +387,7 @@
 								continue;
 							}
 
-							if(fileOut)
-							{
-								printErrnoError(fileOut);
-
-								fclose(fileOut);
-
-								fileOut	=	0x00;
-							}
-
-							close(sockUDP);
-							close(sockTCP);
-
-							close(handlerRecv);
-
-							free(events);
-
-							events	=	0x00;
-
-							exit(EXIT_FAILURE);
+							goto	closeSockUDP;
 						}
 
 						if(!strchr(message.content, '/'))
@@ -667,25 +404,7 @@
 									continue;
 								}
 
-								if(fileOut)
-								{
-									printErrnoError(fileOut);
-
-									fclose(fileOut);
-
-									fileOut	=	0x00;
-								}
-
-								close(sockUDP);
-								close(sockTCP);
-
-								close(handlerRecv);
-
-								free(events);
-
-								events	=	0x00;
-
-								return	EXIT_FAILURE;
+								goto	closeSockUDP;
 							}
 						}
 						else
@@ -710,25 +429,7 @@
 										continue;
 									}
 
-									if(fileOut)
-									{
-										printErrnoError(fileOut);
-
-										fclose(fileOut);
-
-										fileOut	=	0x00;
-									}
-
-									close(sockUDP);
-									close(sockTCP);
-
-									close(handlerRecv);
-
-									free(events);
-
-									events	=	0x00;
-
-									exit(EXIT_FAILURE);
+									goto	closeSockUDP;
 								}
 							}
 							else if(strstr(message.content, "stats"))
@@ -751,47 +452,10 @@
 										continue;
 									}
 
-									if(fileOut)
-									{
-										printErrnoError(fileOut);
-
-										fclose(fileOut);
-
-										fileOut	=	0x00;
-									}
-
-									close(sockUDP);
-									close(sockTCP);
-
-									close(handlerRecv);
-
-									free(events);
-
-									events	=	0x00;
-
-									exit(EXIT_FAILURE);
+									goto	closeSockUDP;
 								}
 							}
-							else if(strstr(message.content, "shutdown"))
-							{
-								close(sockUDP);
-								close(sockTCP);
-
-								close(handlerRecv);
-
-								free(events);
-
-								events	=	0x00;
-
-								if(fileOut)
-								{
-									fclose(fileOut);
-
-									fileOut	=	0x00;
-								}
-
-								exit(EXIT_SUCCESS);
-							}
+							else if(strstr(message.content, "shutdown")){ goto	closeSockUDP; }
 						}
 
 						messageClear(&message);
@@ -799,18 +463,29 @@
 				}
 			}
 
-			close(sockUDP);
-			close(sockTCP);
+			closeSockUDP:
+				close(sockUDP);
+			closeSockTCP:
+				close(sockTCP);
+			closeEPollQueue:
+				close(handlerRecv);
+			freeEPollEvents:
+				free(events);
 
-			close(handlerRecv);
+				events	=	0x00;
+			closeFileOut:	
+				if(fileOut)
+				{
+					printErrnoError(fileOut);
 
-			free(events);
+					fclose(fileOut);
 
-			events	=	0x00;
+					fileOut	=	0x00;
+				}
+				if(errno){ goto	outFailure; }
 
-			fclose(fileOut);
+				exit(EXIT_SUCCESS);
 
-			fileOut	=	0x00;
-
-			return	EXIT_SUCCESS;
+			outFailure:
+				exit(EXIT_FAILURE);
 		}
