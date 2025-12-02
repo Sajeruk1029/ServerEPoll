@@ -311,12 +311,12 @@
 			if(result < 0){ goto	closeFileOut; }
 
 			events	=	(struct epoll_event*)calloc(maxConnections, sizeof(struct epoll_event));
-			if(!events){ goto	freeEPollEvents; }
+			if(!events){ goto	closeFileOut; }
 
 			event.events	=	EPOLLIN | EPOLLET;
 
 			handlerRecv	=	epoll_create(maxConnections);
-			if(handlerRecv < 0){ goto	closeEPollQueue; }
+			if(handlerRecv < 0){ goto	freeEPollEvents; }
 
 			serverTCP.sin_family	=	AF_INET;
 			serverTCP.sin_port	=	htons(portTCP);
